@@ -2517,7 +2517,7 @@
 
         // --- NEW IMPORTS & TOAST LOGIC (Added by Assistant) ---
 
-        async function importCSV(csvText) {
+        window.importCSV = async function (csvText) {
             const lines = csvText.split('\n');
             if (lines.length < 2) {
                 alert("Invalid CSV format or empty file.");
@@ -2664,7 +2664,7 @@
             toggleSettings(); // Close modal at the END
         }
 
-        function showToast(message, type = 'info') {
+        window.showToast = function (message, type = 'info') {
             const id = 'toast-' + Date.now();
             // Check if container exists
             let container = document.getElementById('toast-container');
