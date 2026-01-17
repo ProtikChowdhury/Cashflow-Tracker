@@ -2529,6 +2529,7 @@
 
             let addedCount = 0;
             let errorCount = 0;
+            let skippedCount = 0;
 
             // Helper to parse CSV line respecting quotes
             const parseLine = (line) => {
@@ -2595,6 +2596,15 @@
                         continue;
                     }
 
+                    // CHECK FOR DUPLICATES (Same Date AND Amount)
+                    const existsInDB = expenses.some(e => e.date === dateStr && Math.abs(e.amount - Math.abs(amount)) < 0.01);
+                    const existsInBatch = newItems.some(e => e.date === dateStr && Math.abs(e.amount - Math.abs(amount)) < 0.01);
+
+                    if (existsInDB || existsInBatch) {
+                        skippedCount++;
+                        continue;
+                    }
+
                     const newExpense = {
                         id: Date.now() + Math.random(),
                         type,
@@ -2621,6 +2631,7 @@
             renderAll(); // Immediate Local Update
 
             let msg = `Imported ${addedCount} transactions successfully.`;
+            if (skippedCount > 0) msg += `\nSkipped ${skippedCount} duplicates.`;
             if (errorCount > 0) msg += `\nFailed to parse ${errorCount} lines.`;
 
             // Cloud Sync (Blocking)
@@ -2656,9 +2667,17 @@
                     showToast('Sync Failed! Please check internet.', 'error');
                 }
             } else if (!currentUser) {
-                alert(msg + "\nNote: Not logged in. Data saved ONLY on this device.");
+                if (skippedCount > 0 || errorCount > 0) {
+                    alert(msg + "\n\nNote: Not logged in. Data saved ONLY on this device.");
+                } else {
+                    showToast(msg, 'success');
+                }
             } else {
-                showToast(msg, 'success');
+                if (skippedCount > 0) {
+                    showToast(`Import Complete. Skipped ${skippedCount} duplicates.`, 'info');
+                } else {
+                    showToast(msg, 'success');
+                }
             }
 
             toggleSettings(); // Close modal at the END
