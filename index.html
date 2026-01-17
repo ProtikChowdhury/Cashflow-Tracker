@@ -796,6 +796,12 @@
                         <i class="fa-solid fa-file-csv text-emerald-400 animate-float"></i> Export to CSV
                     </button>
 
+                    <input type="file" id="importFile" accept=".csv" class="hidden" onchange="handleFileSelect(event)">
+                    <button onclick="triggerImport()"
+                        class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-3 transition-colors">
+                        <i class="fa-solid fa-file-import text-blue-400 animate-float"></i> Import from CSV
+                    </button>
+
                     <button onclick="toggleAnimations()" id="motionToggle"
                         class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-3 transition-colors">
                         <i class="fa-solid fa-wand-magic-sparkles text-brand-400"></i> Toggle Animations
@@ -1584,6 +1590,135 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        }
+
+        function triggerImport() {
+            document.getElementById('importFile').click();
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const text = e.target.result;
+                importCSV(text);
+                // Reset input so same file can be selected again if needed
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function importCSV(csvText) {
+            const lines = csvText.split('\n');
+            if (lines.length < 2) {
+                alert("Invalid CSV format or empty file.");
+                return;
+            }
+
+            // Detect headers (simple check)
+            // Expected: "Date","Description","SubCategory","Category","Amount"
+            // We assume standard format exported by this app.
+
+            let addedCount = 0;
+            let errorCount = 0;
+
+            // Helper to parse CSV line respecting quotes
+            const parseLine = (line) => {
+                const result = [];
+                let current = '';
+                let inQuote = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        if (inQuote && line[i + 1] === '"') {
+                            // Escaped quote
+                            current += '"';
+                            i++;
+                        } else {
+                            // Toggle quote
+                            inQuote = !inQuote;
+                        }
+                    } else if (char === ',' && !inQuote) {
+                        result.push(current);
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                result.push(current);
+                return result;
+            };
+
+            // Skip header (index 0)
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                try {
+                    const cols = parseLine(line);
+                    // Expected cols: 0:Date, 1:Desc, 2:SubCat, 3:Cat, 4:Amount
+                    if (cols.length < 5) {
+                        errorCount++;
+                        continue;
+                    }
+
+                    const dateStr = cols[0]; // "2023-10-27T10:00:00.000"
+                    const desc = cols[1];
+                    const subCat = cols[2];
+                    const cat = cols[3];
+                    const amountStr = cols[4]; // "+500" or "-200"
+
+                    // Parse Amount & Type
+                    let amount = 0;
+                    let type = 'expense';
+
+                    if (amountStr.startsWith('+')) {
+                        type = 'earning';
+                        amount = parseFloat(amountStr.substring(1));
+                    } else if (amountStr.startsWith('-')) {
+                        type = 'expense';
+                        amount = parseFloat(amountStr.substring(1));
+                    } else {
+                        // Fallback if no sign
+                        amount = parseFloat(amountStr);
+                        type = 'expense'; // default
+                    }
+
+                    if (isNaN(amount)) {
+                        errorCount++;
+                        continue;
+                    }
+
+                    // Create Expense Object
+                    const newExpense = {
+                        id: Date.now() + Math.random(),
+                        type,
+                        amount: Math.abs(amount), // Ensure positive stored
+                        description: desc,
+                        category: cat,
+                        subCategory: subCat,
+                        date: dateStr
+                    };
+
+                    expenses.push(newExpense);
+                    addedCount++;
+
+                } catch (err) {
+                    console.error("Error parsing line " + i, err);
+                    errorCount++;
+                }
+            }
+
+            expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+            saveExpenses();
+            renderAll();
+
+            let msg = `Imported ${addedCount} transactions successfully.`;
+            if (errorCount > 0) msg += `\nFailed to parse ${errorCount} lines.`;
+            alert(msg);
+            toggleSettings(); // Close modal
         }
 
 
