@@ -1382,6 +1382,11 @@
                         subCategory,
                         date: dateTimeString
                     };
+
+                    // Cloud Sync Update
+                    if (typeof window.cloudUpdate === 'function') {
+                        window.cloudUpdate(expenses[index]);
+                    }
                 }
             } else {
                 const newExpense = {
@@ -1394,19 +1399,14 @@
                     date: dateTimeString
                 };
                 expenses.unshift(newExpense);
-            }
 
-            saveExpenses();
-
-            // Cloud Sync Hook
-            if (typeof window.cloudUpdate === 'function') {
-                if (editingId) {
-                    const idx = expenses.findIndex(e => e.id == editingId);
-                    if (idx !== -1) window.cloudUpdate(expenses[idx]);
-                } else {
+                // Cloud Sync Add
+                if (typeof window.cloudAdd === 'function') {
                     window.cloudAdd(newExpense);
                 }
             }
+
+            saveExpenses();
 
             if (!editingId && isRecurring && type === 'expense') {
                 const recurrenceId = Date.now() + Math.random();
