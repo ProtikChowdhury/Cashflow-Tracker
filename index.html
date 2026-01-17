@@ -1391,7 +1391,9 @@
 
                     // Cloud Sync Update
                     if (typeof window.cloudUpdate === 'function') {
-                        window.cloudUpdate(expenses[index]);
+                        window.cloudUpdate(expenses[index])
+                            .then(() => showToast('Transaction updated successfully', 'success'))
+                            .catch(() => showToast('Saved locally, but cloud sync failed', 'error'));
                     }
                 }
             } else {
@@ -1408,7 +1410,9 @@
 
                 // Cloud Sync Add
                 if (typeof window.cloudAdd === 'function') {
-                    window.cloudAdd(newExpense);
+                    window.cloudAdd(newExpense)
+                        .then(() => showToast('Transaction saved successfully', 'success'))
+                        .catch(() => showToast('Saved locally, but cloud sync failed', 'error'));
                 }
             }
 
@@ -1448,7 +1452,11 @@
                 const exp = expenses.find(e => e.id === expenseToDeleteId);
                 // Cloud Sync Hook
                 if (exp && exp.firestoreId && typeof window.cloudDelete === 'function') {
-                    window.cloudDelete(exp.firestoreId);
+                    window.cloudDelete(exp.firestoreId)
+                        .then(() => showToast('Expense deleted successfully', 'success'))
+                        .catch(() => showToast('Deleted locally, but cloud sync failed', 'error'));
+                } else {
+                    showToast('Expense deleted locally', 'success');
                 }
 
                 expenses = expenses.filter(e => e.id !== expenseToDeleteId);
@@ -1715,10 +1723,70 @@
             saveExpenses();
             renderAll();
 
+            // Cloud Sync for Imports
+            if (currentUser && addedCount > 0) {
+                // We need to sync these new items to the cloud
+                // Ideally this should be a batch write, but for now we'll loop helper
+                // We filter for items that DON'T have a firestoreId yet
+                const unsynced = expenses.filter(e => !e.firestoreId);
+
+                if (unsynced.length > 0) {
+                    showToast(`Syncing ${unsynced.length} items to cloud...`, 'info');
+
+                    // Process in chunks or one-by-one
+                    let syncCount = 0;
+                    const syncPromises = unsynced.map(item => {
+                        return window.cloudAdd(item)
+                            .then(() => syncCount++)
+                            .catch(err => console.error("Import Sync Error", err));
+                    });
+
+                    Promise.all(syncPromises).then(() => {
+                        showToast(`Successfully synced ${syncCount} items!`, 'success');
+                        saveExpenses(); // Save again to store new firestoreIds locally
+                    });
+                }
+            }
+
             let msg = `Imported ${addedCount} transactions successfully.`;
             if (errorCount > 0) msg += `\nFailed to parse ${errorCount} lines.`;
-            alert(msg);
+
+            // If not logged in, just alert
+            if (!currentUser) alert(msg);
+            else showToast(msg, 'success'); // Use toast if available
+
             toggleSettings(); // Close modal
+        }
+
+        // --- Toast Notification System ---
+        function showToast(message, type = 'info') {
+            // Check if container exists
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-2 pointer-events-none';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            // pointer-events-auto so we can click if we add close btn
+            let bgClass = type === 'error' ? 'bg-red-500/90' : (type === 'success' ? 'bg-emerald-500/90' : 'bg-slate-800/90');
+
+            toast.className = `${bgClass} backdrop-blur-md text-white px-6 py-3 rounded-xl shadow-2xl border border-white/10 flex items-center gap-3 animate-slide-up pointer-events-auto min-w-[300px] justify-center`;
+            toast.innerHTML = `
+                <i class="fa-solid ${type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-circle-exclamation' : 'fa-info-circle')}"></i>
+                <span class="font-medium text-sm">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Remove after 3s
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
 
