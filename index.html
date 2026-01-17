@@ -403,6 +403,16 @@
                 SpentWise</h1>
         </button>
         <div class="flex items-center gap-2 md:gap-3">
+            <!-- Auth Button -->
+            <button id="authBtn" onclick="handleAuth()"
+                class="hidden md:flex items-center gap-2 text-sm font-medium bg-white/10 hover:bg-white/20 border border-white/10 px-3 py-1.5 rounded-lg transition-all">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-4 h-4"
+                    alt="Google">
+                <span id="authText">Sign In</span>
+            </button>
+            <div id="userAvatar"
+                class="hidden w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-blue-500 border-2 border-white/20 shadow-lg"
+                title="User"></div>
             <button onclick="checkSavings()" title="Check Savings"
                 class="bg-blue-600/20 text-blue-400 border border-blue-600/30 hover:bg-blue-600/30 p-2 rounded-lg transition-all">
                 <i class="fa-solid fa-piggy-bank text-lg animate-wiggle"></i>
@@ -1388,6 +1398,16 @@
 
             saveExpenses();
 
+            // Cloud Sync Hook
+            if (typeof window.cloudUpdate === 'function') {
+                if (editingId) {
+                    const idx = expenses.findIndex(e => e.id == editingId);
+                    if (idx !== -1) window.cloudUpdate(expenses[idx]);
+                } else {
+                    window.cloudAdd(newExpense);
+                }
+            }
+
             if (!editingId && isRecurring && type === 'expense') {
                 const recurrenceId = Date.now() + Math.random();
                 recurringExpenses.push({
@@ -1419,6 +1439,12 @@
 
         function confirmDelete() {
             if (expenseToDeleteId) {
+                const exp = expenses.find(e => e.id === expenseToDeleteId);
+                // Cloud Sync Hook
+                if (exp && exp.firestoreId && typeof window.cloudDelete === 'function') {
+                    window.cloudDelete(exp.firestoreId);
+                }
+
                 expenses = expenses.filter(e => e.id !== expenseToDeleteId);
                 saveExpenses();
                 closeDeleteModal();
@@ -2109,6 +2135,182 @@
             Protik Chowdhury
         </div>
     </div>
+
+    <!-- Firebase Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHbCsmn70gsJvqrCGMD-5lx8SCNYCFJC8",
+            authDomain: "cashflow-tracker-adc61.firebaseapp.com",
+            projectId: "cashflow-tracker-adc61",
+            storageBucket: "cashflow-tracker-adc61.firebasestorage.app",
+            messagingSenderId: "168016908674",
+            appId: "1:168016908674:web:12b1f984c5a6c982a87f9b"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        let currentUser = null;
+
+        // AUTH FUNCTIONS
+        window.handleAuth = async () => {
+            if (currentUser) {
+                // Logout
+                try {
+                    await signOut(auth);
+                    // UI handled by onAuthStateChanged
+                } catch (error) {
+                    console.error("Logout Error:", error);
+                    alert("Logout failed: " + error.message);
+                }
+            } else {
+                // Login
+                try {
+                    await signInWithPopup(auth, provider);
+                    // UI handled by onAuthStateChanged
+                } catch (error) {
+                    console.error("Login Error:", error);
+                    alert("Login failed: " + error.message);
+                }
+            }
+        };
+
+        // STATE LISTENER
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            updateAuthUI(user);
+
+            if (user) {
+                // Load Cloud Data
+                console.log("User logged in:", user.email);
+                await loadCloudData(user.uid);
+            } else {
+                // Revert to Local Data
+                console.log("User logged out");
+                window.expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+                window.renderAll();
+            }
+        });
+
+        function updateAuthUI(user) {
+            const btnText = document.getElementById('authText');
+            const avatar = document.getElementById('userAvatar');
+
+            if (user) {
+                btnText.innerText = "Sign Out";
+                avatar.classList.remove('hidden');
+                avatar.style.backgroundImage = `url('${user.photoURL}')`;
+                avatar.style.backgroundSize = 'cover';
+            } else {
+                btnText.innerText = "Sign In";
+                avatar.classList.add('hidden');
+            }
+        }
+
+        // DATABASE FUNCTIONS
+        async function loadCloudData(uid) {
+            try {
+                // Show loading state if desired
+                const q = query(collection(db, "users", uid, "expenses"));
+                const querySnapshot = await getDocs(q);
+
+                const cloudExpenses = [];
+                querySnapshot.forEach((doc) => {
+                    cloudExpenses.push({ ...doc.data(), firestoreId: doc.id });
+                });
+
+                if (cloudExpenses.length > 0) {
+                    console.log("Loaded " + cloudExpenses.length + " expenses from cloud");
+                    // Merge or Replace? For now, replace local with cloud
+                    window.expenses = cloudExpenses;
+                    // Sort by Date Descending
+                    window.expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    window.renderAll();
+                } else {
+                    console.log("No cloud data found. Asking to sync local?");
+                    // Optional: Auto-upload local data if cloud is empty
+                    if (window.expenses.length > 0 && confirm("Cloud is empty. Upload your local data?")) {
+                        syncLocalToCloud(uid);
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading cloud data:", error);
+            }
+        }
+
+        async function syncLocalToCloud(uid) {
+            const localData = JSON.parse(localStorage.getItem('expenses')) || [];
+            let count = 0;
+            for (const item of localData) {
+                await addDoc(collection(db, "users", uid, "expenses"), item);
+                count++;
+            }
+            alert(`Synced ${count} items to cloud!`);
+            loadCloudData(uid); // Reload to get firestoreIds
+        }
+
+        // EXPOSE SAVE FUNCTION TO WINDOW
+        // We override the original saveExpenses to also write to Cloud
+        const originalSave = window.saveExpenses;
+
+        window.saveExpenses = async () => {
+            // 1. Save Local (Backup/Cache)
+            localStorage.setItem('expenses', JSON.stringify(window.expenses));
+            window.processRecurringExpenses();
+
+            // 2. Save Cloud (If Logged In)
+            if (currentUser) {
+                // Determine what changed? 
+                // Simple approach: For this demo, we can just save everything? No, too expensive.
+                // Better: We rely on the Add/Delete functions calling specific Cloud methods.
+                // BUT, the existing app calls 'saveExpenses()' after ANY change.
+                // To avoid rewriting the entire app logic, we will do a "smart sync" or just 
+                // intercept the Add/Delete actions in the main script.
+
+                // Strategy: We will modify the HTML's handleAddTransaction and confirmDelete 
+                // to call distinct cloud functions if we can, 
+                // OR we just use this override to push the *latest* item if it's an add.
+            }
+        };
+
+        // Better: Hook into Add/Delete directly
+        window.cloudAdd = async (expense) => {
+            if (!currentUser) return;
+            try {
+                const docRef = await addDoc(collection(db, "users", currentUser.uid, "expenses"), expense);
+                console.log("Cloud Add ID: ", docRef.id);
+                // Update local model with firestoreId
+                const idx = window.expenses.findIndex(e => e.id === expense.id);
+                if (idx !== -1) window.expenses[idx].firestoreId = docRef.id;
+            } catch (e) { console.error("Cloud Add Error", e); }
+        };
+
+        window.cloudDelete = async (firestoreId) => {
+            if (!currentUser || !firestoreId) return;
+            try {
+                await deleteDoc(doc(db, "users", currentUser.uid, "expenses", firestoreId));
+                console.log("Cloud Delete Success");
+            } catch (e) { console.error("Cloud Delete Error", e); }
+        };
+
+        window.cloudUpdate = async (expense) => {
+            if (!currentUser || !expense.firestoreId) return;
+            try {
+                // We need to omit the firestoreId from the data payload
+                const { firestoreId, ...data } = expense;
+                await setDoc(doc(db, "users", currentUser.uid, "expenses", firestoreId), data);
+                console.log("Cloud Update Success");
+            } catch (e) { console.error("Cloud Update Error", e); }
+        }
+
+    </script>
 </body>
 
 </html>
