@@ -1462,6 +1462,7 @@
                 expenses = expenses.filter(e => e.id !== expenseToDeleteId);
                 saveExpenses();
                 closeDeleteModal();
+                renderAll(); // Ensure UI updates immediately!
             }
         }
 
@@ -1618,7 +1619,7 @@
             reader.readAsText(file);
         }
 
-        function importCSV(csvText) {
+        async function importCSV_Legacy(csvText) {
             const lines = csvText.split('\n');
             if (lines.length < 2) {
                 alert("Invalid CSV format or empty file.");
@@ -1759,7 +1760,7 @@
         }
 
         // --- Toast Notification System ---
-        function showToast(message, type = 'info') {
+        function showToast_Legacy(message, type = 'info') {
             // Check if container exists
             let container = document.getElementById('toast-container');
             if (!container) {
@@ -2511,6 +2512,201 @@
                 await setDoc(doc(db, "users", currentUser.uid, "expenses", firestoreId), data);
                 console.log("Cloud Update Success");
             } catch (e) { console.error("Cloud Update Error", e); }
+        }
+
+
+        // --- NEW IMPORTS & TOAST LOGIC (Added by Assistant) ---
+
+        async function importCSV(csvText) {
+            const lines = csvText.split('\n');
+            if (lines.length < 2) {
+                alert("Invalid CSV format or empty file.");
+                return;
+            }
+
+            // Detect headers (simple check)
+            // Expected: "Date","Description","SubCategory","Category","Amount"
+
+            let addedCount = 0;
+            let errorCount = 0;
+
+            // Helper to parse CSV line respecting quotes
+            const parseLine = (line) => {
+                const result = [];
+                let current = '';
+                let inQuote = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        if (inQuote && line[i + 1] === '"') {
+                            current += '"';
+                            i++;
+                        } else {
+                            inQuote = !inQuote;
+                        }
+                    } else if (char === ',' && !inQuote) {
+                        result.push(current);
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                result.push(current);
+                return result;
+            };
+
+            const newItems = [];
+
+            // Skip header (index 0)
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                try {
+                    const cols = parseLine(line);
+                    if (cols.length < 5) {
+                        errorCount++;
+                        continue;
+                    }
+
+                    const dateStr = cols[0];
+                    const desc = cols[1];
+                    const subCat = cols[2];
+                    const cat = cols[3];
+                    const amountStr = cols[4];
+
+                    // Parse Amount & Type
+                    let amount = 0;
+                    let type = 'expense';
+
+                    if (amountStr.startsWith('+')) {
+                        type = 'earning';
+                        amount = parseFloat(amountStr.substring(1));
+                    } else if (amountStr.startsWith('-')) {
+                        type = 'expense';
+                        amount = parseFloat(amountStr.substring(1));
+                    } else {
+                        amount = parseFloat(amountStr);
+                        type = 'expense';
+                    }
+
+                    if (isNaN(amount)) {
+                        errorCount++;
+                        continue;
+                    }
+
+                    const newExpense = {
+                        id: Date.now() + Math.random(),
+                        type,
+                        amount: Math.abs(amount), // Ensure positive stored
+                        description: desc,
+                        category: cat,
+                        subCategory: subCat,
+                        date: dateStr
+                    };
+
+                    newItems.push(newExpense);
+                    addedCount++;
+
+                } catch (err) {
+                    console.error("Error parsing line " + i, err);
+                    errorCount++;
+                }
+            }
+
+            // Batch Add
+            expenses.push(...newItems);
+            expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+            saveExpenses();
+            renderAll(); // Immediate Local Update
+
+            let msg = `Imported ${addedCount} transactions successfully.`;
+            if (errorCount > 0) msg += `\nFailed to parse ${errorCount} lines.`;
+
+            // Cloud Sync (Blocking)
+            if (currentUser && newItems.length > 0) {
+                // Show Blocking Toast that doesn't disappear
+                const toastId = showToast(`Syncing ${newItems.length} items to cloud... Please wait.`, 'sync');
+
+                try {
+                    let syncCount = 0;
+                    // Chunked execution
+                    const syncPromises = newItems.map(item => {
+                        if (typeof window.cloudAdd === 'function') {
+                            return window.cloudAdd(item)
+                                .then(() => syncCount++)
+                                .catch(err => console.error("Import Sync Error", err));
+                        }
+                        return Promise.resolve();
+                    });
+
+                    await Promise.all(syncPromises);
+
+                    // Remove Sync Toast
+                    const toastEl = document.getElementById(toastId);
+                    if (toastEl) toastEl.remove();
+
+                    showToast(`Cloud Sync Complete! (${syncCount}/${newItems.length})`, 'success');
+                    saveExpenses(); // Save again to store new firestoreIds
+
+                } catch (e) {
+                    console.error(e);
+                    const toastEl = document.getElementById(toastId);
+                    if (toastEl) toastEl.remove();
+                    showToast('Sync Failed! Please check internet.', 'error');
+                }
+            } else if (!currentUser) {
+                alert(msg + "\nNote: Not logged in. Data saved ONLY on this device.");
+            } else {
+                showToast(msg, 'success');
+            }
+
+            toggleSettings(); // Close modal at the END
+        }
+
+        function showToast(message, type = 'info') {
+            const id = 'toast-' + Date.now();
+            // Check if container exists
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-2 pointer-events-none';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.id = id;
+            // pointer-events-auto so we can click if we add close btn
+            let bgClass = type === 'error' ? 'bg-red-500/90' : (type === 'success' ? 'bg-emerald-500/90' : (type === 'sync' ? 'bg-blue-600/90' : 'bg-slate-800/90'));
+
+            // Sync toast pulse
+            const anim = type === 'sync' ? 'animate-pulse' : 'animate-slide-up';
+
+            toast.className = `${bgClass} backdrop-blur-md text-white px-6 py-3 rounded-xl shadow-2xl border border-white/10 flex items-center gap-3 ${anim} pointer-events-auto min-w-[300px] justify-center`;
+
+            let icon = 'fa-info-circle';
+            if (type === 'success') icon = 'fa-check-circle';
+            if (type === 'error') icon = 'fa-circle-exclamation';
+            if (type === 'sync') icon = 'fa-rotate';
+
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} ${type === 'sync' ? 'fa-spin' : ''}"></i>
+                <span class="font-medium text-sm">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto Remove unless sync
+            if (type !== 'sync') {
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(10px)';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            return id;
         }
 
     </script>
