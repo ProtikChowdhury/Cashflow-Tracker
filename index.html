@@ -952,7 +952,7 @@
 
     <script>
         // --- State Management ---
-        let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+        var expenses = JSON.parse(localStorage.getItem('expenses')) || [];
         // Budget State
         let monthlyBudget = parseFloat(localStorage.getItem('monthlyBudget')) || 40000;
         let animationsEnabled = localStorage.getItem('animationsEnabled') !== 'false';
