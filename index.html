@@ -2159,7 +2159,7 @@
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const day = String(date.getDate()).padStart(2, '0');
-                return `${year} -${month} -${day} `;
+                return `${year}-${month}-${day}`;
             };
 
             // Init Map with all dates in range
@@ -2312,17 +2312,17 @@
                     labels.forEach((label, i) => {
                         const percent = ((data[i] / total) * 100).toFixed(1);
                         legendDiv.innerHTML += `
-                    < div class="flex items-center justify-between text-xs p-1 rounded" >
+                                <div class="flex items-center justify-between text-xs p-1 rounded">
                                     <div class="flex items-center gap-2 overflow-hidden">
                                         <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${colorPalette[i % colorPalette.length]}"></span>
                                         <span class="text-slate-300 truncate" title="${label}">${label}</span>
                                     </div>
                                     <span class="text-slate-500 font-mono flex-shrink-0 ml-2">${percent}%</span>
-                                </div >
+                                </div>
                     `;
                     });
                 } else {
-                    legendDiv.innerHTML = `< p class="text-slate-500 text-[10px] text-center py-2" > No ${type} data for this month</p > `;
+                    legendDiv.innerHTML = `<p class="text-slate-500 text-[10px] text-center py-2">No ${type} data for this month</p>`;
                 }
             };
 
