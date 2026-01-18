@@ -413,10 +413,8 @@
             <div id="userAvatar"
                 class="hidden w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-blue-500 border-2 border-white/20 shadow-lg"
                 title="User"></div>
-            <button onclick="checkSavings()" title="Check Savings"
-                class="bg-blue-600/20 text-blue-400 border border-blue-600/30 hover:bg-blue-600/30 p-2 rounded-lg transition-all">
-                <i class="fa-solid fa-piggy-bank text-lg animate-wiggle"></i>
-            </button>
+            <!-- Removed Savings Button -->
+
 
             <div id="clock" class="hidden md:block text-slate-400 font-mono text-sm mr-2"></div>
 
@@ -468,14 +466,12 @@
                     <p class="text-slate-400 text-sm font-medium mb-1">This Month's Expense</p>
                     <h3 class="text-3xl font-bold text-white tracking-tight" id="monthlyExpense">₹0.00</h3>
                 </div>
-                <div class="glass p-6 rounded-2xl relative overflow-hidden group hover-card cursor-pointer"
-                    onclick="openBudgetModal()">
+                <div class="glass p-6 rounded-2xl relative overflow-hidden group hover-card cursor-default">
                     <div
                         class="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all duration-500">
                     </div>
-                    <p class="text-slate-400 text-sm font-medium mb-1">Budget Status</p>
-                    <h3 class="text-3xl font-bold text-emerald-400 tracking-tight" id="budgetStatus">Healthy</h3>
-                    <p class="text-xs text-slate-500 mt-1" id="budgetLimitDisplay">Budget: ₹40,000</p>
+                    <p class="text-slate-400 text-sm font-medium mb-1">This Month's Savings</p>
+                    <h3 class="text-3xl font-bold text-white tracking-tight" id="monthlySavingsDisplay">₹0.00</h3>
                 </div>
             </div>
 
@@ -611,6 +607,19 @@
                 </div>
             </div>
 
+            <!-- Budget Status Section (Moved) -->
+            <div class="glass p-6 rounded-2xl animate-fade-in cursor-pointer hover-card" onclick="openBudgetModal()"
+                style="animation-delay: 0.45s;">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-lg font-semibold text-white">Budget Status</h2>
+                    <i class="fa-solid fa-chevron-right text-slate-500 text-sm"></i>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <h3 class="text-3xl font-bold text-emerald-400 tracking-tight" id="budgetStatus">Healthy</h3>
+                    <p class="text-sm text-slate-400" id="budgetLimitDisplay">Budget: ₹40,000</p>
+                </div>
+            </div>
+
 
 
 
@@ -652,17 +661,7 @@
                         </div>
                     </div>
 
-                    <div class="flex gap-4 p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50">
-                        <div
-                            class="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 text-xl shrink-0">
-                            <i class="fa-solid fa-piggy-bank"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-white font-semibold mb-1">Savings Calc</h3>
-                            <p class="text-slate-400 text-sm">Click the piggy bank to calculate your net savings for any
-                                period.</p>
-                        </div>
-                    </div>
+                    <!-- Removed Savings Calc Feature -->
 
                     <div class="flex gap-4 p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50">
                         <div
@@ -1797,6 +1796,7 @@
         function renderSummary() {
             const incomeEl = document.getElementById('monthlyIncome');
             const expenseEl = document.getElementById('monthlyExpense');
+            const savingsEl = document.getElementById('monthlySavingsDisplay'); // New Element
             const statusEl = document.getElementById('budgetStatus');
 
             const now = new Date();
@@ -1817,6 +1817,15 @@
 
             incomeEl.innerText = formatCurrency(monthlyIncome);
             expenseEl.innerText = formatCurrency(monthlyExpense);
+
+            // Calculate & Display Savings
+            const monthlySavings = monthlyIncome - monthlyExpense;
+            savingsEl.innerText = formatCurrency(monthlySavings);
+            if (monthlySavings >= 0) {
+                savingsEl.className = "text-3xl font-bold text-emerald-400 tracking-tight";
+            } else {
+                savingsEl.className = "text-3xl font-bold text-red-400 tracking-tight";
+            }
 
             // Budget Status Logic
             // Healthy: <= 75% of budget
