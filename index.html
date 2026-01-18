@@ -497,6 +497,11 @@
             .relative.h-48.w-full {
                 height: 200px;
             }
+
+            /* Enable Pinch Zoom Scaling via Inheritance */
+            #transactionTableBody td {
+                font-size: inherit;
+            }
         }
     </style>
 </head>
@@ -2949,19 +2954,21 @@
 <script>
         // --- Pinch to Zoom for Table Logic ---
         (function initPinchZoom() {
-            const container = document.querySelector('.overflow-x-auto.overflow-y-auto'); // The scroll container
+            const container = document.querySelector('.overflow-x-auto.overflow-y-auto'); 
             const tableBody = document.getElementById('transactionTableBody');
             
             if (!container || !tableBody) return;
 
             let initialDistance = 0;
-            let currentScale = 1; // 1 = default font size (e.g. 100%)
+            let currentScale = 1; 
+            let startScale = 1;
             let isPinching = false;
 
             container.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 2) {
                     isPinching = true;
                     initialDistance = getDistance(e.touches);
+                    startScale = currentScale; // Capture starting scale
                 }
             }, { passive: true });
 
@@ -2969,31 +2976,22 @@
                 if (!isPinching || e.touches.length !== 2) return;
 
                 const newDistance = getDistance(e.touches);
+                if (initialDistance === 0) return; // Prevent division by zero
+
                 const delta = newDistance / initialDistance;
                 
-                // Adjust scale slightly based on pinch delta
-                // If delta > 1 (pinch out), increase scale. If < 1 (pinch in), decrease.
-                // Damping factor 0.5 to make it less sensitive
-                const scaleChange = (delta - 1) * 0.5;
-                let nextScale = currentScale + scaleChange;
+                // Calculate new scale based on startScale * delta
+                // delta > 1 means pinch out (zoom in), delta < 1 means pinch in (zoom out)
+                let nextScale = startScale * delta;
 
                 // Clamp Scale (0.7x to 1.3x)
                 if (nextScale < 0.7) nextScale = 0.7;
                 if (nextScale > 1.3) nextScale = 1.3;
 
-                // Apply Scale via Font Size to row (simplest way to zoom table rows)
-                // Base mobile font is usually text-xs (0.75rem) or sm (0.875rem)
-                // We'll scale relative to 100%
+                // Apply Scale
                 tableBody.style.fontSize = `${ nextScale * 100} %`;
                 
-                // Also scale the internal elements if needed, or rely on em/rem inheritance
-                // For this specific table, cells are px-4 py-3. We might want to adjust padding too for "density"
-                const density = nextScale < 1 ? '0.5rem 0.5rem' : '0.75rem 1rem';
-                
-                // We'll just stick to font-size for now as it flows naturally
-                
                 currentScale = nextScale;
-                initialDistance = newDistance; // Reset for continuous zoom
             }, { passive: true });
 
             container.addEventListener('touchend', (e) => {
