@@ -594,16 +594,10 @@
                 SpentWise</h1>
         </button>
         <div class="flex items-center gap-2 md:gap-3">
-            <!-- Auth Button -->
-            <button id="authBtn" onclick="handleAuth()"
-                class="hidden md:flex items-center gap-2 text-sm font-medium bg-white/10 hover:bg-white/20 border border-white/10 px-3 py-1.5 rounded-lg transition-all">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-4 h-4"
-                    alt="Google">
-                <span id="authText">Sign In</span>
-            </button>
-            <div id="userAvatar"
-                class="hidden w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-blue-500 border-2 border-white/20 shadow-lg"
-                title="User"></div>
+            <!-- Auth Button Moved to Settings -->
+            <div id="userAvatar" onclick="logoutPrompt()"
+                class="hidden w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-blue-500 border-2 border-white/20 shadow-lg cursor-pointer"
+                title="Sign Out"></div>
             <!-- Removed Savings Button -->
 
 
@@ -642,27 +636,33 @@
             </div>
 
             <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in" style="animation-delay: 0.1s;">
-                <div class="glass p-6 rounded-2xl relative overflow-hidden group hover-card cursor-default">
+            <div class="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-4 animate-fade-in" style="animation-delay: 0.1s;">
+                <div
+                    class="glass p-2 md:p-6 rounded-xl md:rounded-2xl relative overflow-hidden group hover-card cursor-default">
                     <div
-                        class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-500">
+                        class="hidden md:block absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all duration-500">
                     </div>
-                    <p class="text-slate-400 text-sm font-medium mb-1">This Month's Income</p>
-                    <h3 class="text-3xl font-bold text-white tracking-tight" id="monthlyIncome">₹0.00</h3>
+                    <p class="text-slate-400 text-[10px] md:text-sm font-medium mb-0 md:mb-1 truncate">Income</p>
+                    <h3 class="text-sm md:text-3xl font-bold text-white tracking-tight truncate" id="monthlyIncome">
+                        ₹0.00</h3>
                 </div>
-                <div class="glass p-6 rounded-2xl relative overflow-hidden group hover-card cursor-default">
+                <div
+                    class="glass p-2 md:p-6 rounded-xl md:rounded-2xl relative overflow-hidden group hover-card cursor-default">
                     <div
-                        class="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all duration-500">
+                        class="hidden md:block absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all duration-500">
                     </div>
-                    <p class="text-slate-400 text-sm font-medium mb-1">This Month's Expense</p>
-                    <h3 class="text-3xl font-bold text-white tracking-tight" id="monthlyExpense">₹0.00</h3>
+                    <p class="text-slate-400 text-[10px] md:text-sm font-medium mb-0 md:mb-1 truncate">Expense</p>
+                    <h3 class="text-sm md:text-3xl font-bold text-white tracking-tight truncate" id="monthlyExpense">
+                        ₹0.00</h3>
                 </div>
-                <div class="glass p-6 rounded-2xl relative overflow-hidden group hover-card cursor-default">
+                <div
+                    class="glass p-2 md:p-6 rounded-xl md:rounded-2xl relative overflow-hidden group hover-card cursor-default">
                     <div
-                        class="absolute -right-4 -top-4 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all duration-500">
+                        class="hidden md:block absolute -right-4 -top-4 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all duration-500">
                     </div>
-                    <p class="text-slate-400 text-sm font-medium mb-1">This Month's Savings</p>
-                    <h3 class="text-3xl font-bold text-white tracking-tight" id="monthlySavingsDisplay">₹0.00</h3>
+                    <p class="text-slate-400 text-[10px] md:text-sm font-medium mb-0 md:mb-1 truncate">Savings</p>
+                    <h3 class="text-sm md:text-3xl font-bold text-white tracking-tight truncate"
+                        id="monthlySavingsDisplay">₹0.00</h3>
                 </div>
             </div>
 
@@ -981,6 +981,12 @@
                 </div>
 
                 <div class="space-y-4">
+                    <button id="authBtn" onclick="handleAuth()"
+                        class="w-full bg-white text-slate-900 font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors flex items-center justify-center gap-2 mb-4">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5"
+                            alt="Google">
+                        <span id="authText">Sign In with Google</span>
+                    </button>
                     <button onclick="exportCSV()"
                         class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-3 transition-colors">
                         <i class="fa-solid fa-file-csv text-emerald-400 animate-float"></i> Export to CSV
@@ -1170,6 +1176,12 @@
     <script>
         function toggleFab() {
             document.getElementById('mobileFab').classList.toggle('active');
+        }
+
+        function logoutPrompt() {
+            if (confirm("Do you want to sign out?")) {
+                if (typeof handleAuth === 'function') handleAuth();
+            }
         }
     </script>
 
@@ -2040,9 +2052,9 @@
             const monthlySavings = monthlyIncome - monthlyExpense;
             savingsEl.innerText = formatCurrency(monthlySavings);
             if (monthlySavings >= 0) {
-                savingsEl.className = "text-3xl font-bold text-emerald-400 tracking-tight";
+                savingsEl.className = "text-sm md:text-3xl font-bold text-emerald-400 tracking-tight truncate";
             } else {
-                savingsEl.className = "text-3xl font-bold text-red-400 tracking-tight";
+                savingsEl.className = "text-sm md:text-3xl font-bold text-red-400 tracking-tight truncate";
             }
 
             // Budget Status Logic
