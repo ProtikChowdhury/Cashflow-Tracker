@@ -636,7 +636,7 @@
             </div>
 
             <!-- Summary Cards -->
-            <div class="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-4 animate-fade-in" style="animation-delay: 0.1s;">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 animate-fade-in" style="animation-delay: 0.1s;">
                 <div
                     class="glass p-2 md:p-6 rounded-xl md:rounded-2xl relative overflow-hidden group hover-card cursor-default">
                     <div
@@ -656,12 +656,14 @@
                         ₹0.00</h3>
                 </div>
                 <div
-                    class="glass p-2 md:p-6 rounded-xl md:rounded-2xl relative overflow-hidden group hover-card cursor-default">
+                    class="col-span-2 md:col-span-1 glass p-2 md:p-6 rounded-xl md:rounded-2xl relative overflow-hidden group hover-card cursor-default">
                     <div
                         class="hidden md:block absolute -right-4 -top-4 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all duration-500">
                     </div>
-                    <p class="text-slate-400 text-[10px] md:text-sm font-medium mb-0 md:mb-1 truncate">Savings</p>
-                    <h3 class="text-sm md:text-3xl font-bold text-white tracking-tight truncate"
+                    <p
+                        class="text-slate-400 text-[10px] md:text-sm font-medium mb-0 md:mb-1 truncate text-center md:text-left">
+                        Savings</p>
+                    <h3 class="text-sm md:text-3xl font-bold text-white tracking-tight truncate text-center md:text-left"
                         id="monthlySavingsDisplay">₹0.00</h3>
                 </div>
             </div>
@@ -2052,9 +2054,9 @@
             const monthlySavings = monthlyIncome - monthlyExpense;
             savingsEl.innerText = formatCurrency(monthlySavings);
             if (monthlySavings >= 0) {
-                savingsEl.className = "text-sm md:text-3xl font-bold text-emerald-400 tracking-tight truncate";
+                savingsEl.className = "text-base md:text-3xl font-bold text-emerald-400 tracking-tight truncate text-center md:text-left";
             } else {
-                savingsEl.className = "text-sm md:text-3xl font-bold text-red-400 tracking-tight truncate";
+                savingsEl.className = "text-base md:text-3xl font-bold text-red-400 tracking-tight truncate text-center md:text-left";
             }
 
             // Budget Status Logic
@@ -2645,6 +2647,9 @@
         function updateAuthUI(user) {
             const btnText = document.getElementById('authText');
             const avatar = document.getElementById('userAvatar');
+            const btn = document.getElementById('authBtn');
+            // Ensure button is visible
+            if (btn) btn.classList.remove('hidden');
 
             if (user) {
                 btnText.innerText = "Sign Out";
