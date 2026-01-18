@@ -487,21 +487,22 @@
                 display: none;
             }
 
-            /* Make rows display as cards */
+            /* Make rows display as compact cards */
             tbody tr {
                 display: grid;
+                grid-template-columns: 40px 1fr auto;
+                grid-template-rows: auto auto;
                 grid-template-areas:
-                    "date amount"
-                    "desc desc"
-                    "cat action";
-                grid-template-columns: 1fr auto;
-                gap: 8px;
+                    "icon desc amount"
+                    "icon meta action";
+                gap: 2px 12px;
+
                 background: rgba(30, 41, 59, 0.4);
-                margin-bottom: 12px;
-                padding: 16px;
+                margin-bottom: 8px;
+                padding: 12px;
                 border: 1px solid rgba(255, 255, 255, 0.05);
-                border-radius: 16px;
-                position: relative;
+                border-radius: 12px;
+                align-items: center;
             }
 
             /* Cells */
@@ -511,58 +512,68 @@
                 display: block;
             }
 
-            /* Assign cells to grid areas */
+            /* --- Column Mapping & Styling --- */
+
+            /* Date -> Meta (Bottom Leftish) */
             td:nth-child(1) {
-                grid-area: date;
-                font-size: 0.75rem;
+                grid-area: meta;
+                font-size: 0.7rem;
                 color: #94a3b8;
+                align-self: start;
             }
 
-            /* Date */
+            /* Description -> Desc (Top Middle) */
             td:nth-child(2) {
                 grid-area: desc;
-                font-size: 1rem;
+                font-size: 0.95rem;
                 color: #f8fafc;
                 font-weight: 500;
-                margin-top: 4px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+                /* FORCE TRUNCATION */
             }
 
-            /* Desc */
+            /* Category/Subcategory -> Icon area? */
             td:nth-child(3) {
-                grid-area: cat;
-                margin-top: 8px;
+                grid-area: icon;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
 
-            /* Category */
+            /* Amount -> Amount (Top Right) */
             td:nth-child(4) {
                 grid-area: amount;
-                font-size: 1.1rem;
+                font-size: 1rem;
                 text-align: right;
+                font-weight: 600;
             }
 
-            /* Amount */
+            /* Action -> Action (Bottom Right) */
             td:nth-child(5) {
                 grid-area: action;
                 text-align: right;
-                margin-top: 8px;
             }
 
-            /* Action */
+            /* Adjust styling for specific elements inside */
+            td:nth-child(3) span.text-xs {
+                display: none;
+                /* Hide Subcategory text on mobile */
+            }
 
-            /* Adjust styling for card look */
-            td:nth-child(3) span {
+            td:nth-child(3) span.px-2 {
                 /* Category Badge */
-                font-size: 0.7rem;
-                padding: 4px 8px;
-            }
-
-            /* Delete Button visibility on mobile */
-            td:nth-child(5) button {
-                opacity: 0.5 !important;
-            }
-
-            td:nth-child(5) button:hover {
-                opacity: 1 !important;
+                font-size: 0.65rem;
+                padding: 2px 6px;
+                border-radius: 6px;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
             }
 
             /* Chart Mobile Height Fix */
@@ -576,6 +587,9 @@
             }
 
             /* Donut Charts */
+
+
+
         }
     </style>
 </head>
