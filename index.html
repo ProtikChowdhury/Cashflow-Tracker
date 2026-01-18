@@ -482,106 +482,12 @@
         /* 2. Mobile Card View for Table */
         @media (max-width: 768px) {
 
-            /* Hide Thead */
+            /* Keep Thead Hidden */
             thead {
-                display: none;
+                /* display: none;   <- SHOW HEADERS for Tabular View */
             }
 
-            /* 3-Column Grid Layout: Date | Item (Desc+Cat) | Amount */
-            tbody tr {
-                display: grid;
-                grid-template-columns: auto 1fr auto;
-                /* 3 Columns */
-                grid-template-rows: auto auto;
-                /* 2 Rows to stack Desc and Cat */
-                gap: 2px 12px;
-
-                /* Flat Grid Look (No Card Effect) */
-                background: transparent;
-                margin-bottom: 0;
-                padding: 12px 0;
-                border: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 0;
-                align-items: center;
-            }
-
-            /* Reset Cells */
-            td {
-                padding: 0 !important;
-                border: none !important;
-                display: block;
-            }
-
-            /* 1. Date (Left) */
-            td:nth-child(1) {
-                grid-column: 1;
-                grid-row: 1 / span 2;
-                /* Vertical Center */
-                font-size: 0.75rem;
-                color: #94a3b8;
-                align-self: center;
-                text-align: center;
-                min-width: 40px;
-                line-height: 1.2;
-            }
-
-            /* 2. Description (Middle Top) */
-            td:nth-child(2) {
-                grid-column: 2;
-                grid-row: 1;
-                font-size: 0.95rem;
-                color: #f8fafc;
-                font-weight: 500;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 100%;
-            }
-
-            /* 3. Category (Middle Bottom - under Desc) */
-            td:nth-child(3) {
-                grid-column: 2;
-                grid-row: 2;
-                align-self: start;
-                display: flex;
-                justify-content: flex-start;
-                margin-top: -2px;
-                /* Pull it up a bit closer to desc */
-            }
-
-            /* 4. Amount (Right) */
-            td:nth-child(4) {
-                grid-column: 3;
-                grid-row: 1 / span 2;
-                /* Vertical Center */
-                font-size: 1rem;
-                text-align: right;
-                font-weight: 600;
-                align-self: center;
-            }
-
-            /* 5. Action (Hidden) */
-            td:nth-child(5) {
-                display: none;
-            }
-
-            /* Styling tweaks for this layout */
-            td:nth-child(3) span.px-2 {
-                font-size: 0.65rem;
-                padding: 2px 6px;
-                border-radius: 4px;
-                display: inline-block;
-                line-height: normal;
-                width: auto;
-                height: auto;
-            }
-
-            td:nth-child(2) span.text-xs {
-                display: none;
-            }
-
-            /* Chart Mobile Height Fix */
+            /* Just ensure Chart heights are controlled */
             .relative.h-64.w-full {
                 height: 250px;
             }
@@ -754,7 +660,7 @@
                                     Item <i class="fa-solid fa-sort text-slate-600 ml-1 text-xs"
                                         id="sortIcon-description"></i>
                                 </th>
-                                <th class="px-4 py-3 cursor-pointer hover:text-white transition-colors"
+                                <th class="px-4 py-3 cursor-pointer hover:text-white transition-colors hidden md:table-cell"
                                     onclick="handleSort('category')">
                                     Category <i class="fa-solid fa-sort text-slate-600 ml-1 text-xs"
                                         id="sortIcon-category"></i>
@@ -764,7 +670,7 @@
                                     Amount <i class="fa-solid fa-sort text-slate-600 ml-1 text-xs"
                                         id="sortIcon-amount"></i>
                                 </th>
-                                <th class="px-4 py-3 rounded-r-lg text-right">Action</th>
+                                <th class="px-4 py-3 rounded-r-lg text-right hidden md:table-cell">Action</th>
                             </tr>
                         </thead>
                         <tbody id="transactionTableBody">
@@ -2151,23 +2057,26 @@
                 const moneyClass = isEarning ? 'text-emerald-400' : 'text-red-400';
                 const sign = isEarning ? '+' : '';
 
-                tr.innerHTML = `
                     <td class="px-4 py-3 text-white font-medium">
                         ${new Date(expense.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </td>
                     <td class="px-4 py-3 text-slate-300">
                         ${expense.description}
-                        <span class="text-xs text-slate-500 block">${expense.subCategory}</span>
+                        <!-- Mobile Category (Hidden on Desc, visible on Mobile via MD classes) -->
+                        <div class="md:hidden text-[10px] text-slate-500 mt-0.5 uppercase tracking-wider font-semibold">
+                            ${expense.category}
+                        </div>
+                        <span class="text-xs text-slate-500 block hidden md:block">${expense.subCategory}</span>
                     </td>
-                    <td class="px-4 py-3 text-xs">
+                    <td class="px-4 py-3 text-xs hidden md:table-cell">
                          <span class="px-2 py-1 rounded font-semibold bg-slate-700 text-slate-300 border border-slate-600">
                             ${expense.category}
                         </span>
                     </td>
-                    <td class="px-4 py-3 ${moneyClass} font-bold font-mono">
+                    <td class="px-4 py-3 ${moneyClass} font-bold font-mono text-right">
                         ${sign}${formatCurrency(expense.amount)}
                     </td>
-                    <td class="px-4 py-3 text-right">
+                    <td class="px-4 py-3 text-right hidden md:table-cell">
                         <button onclick="event.stopPropagation(); deleteExpense(${expense.id})" class="text-slate-500 hover:text-red-400 transition-colors p-2 opacity-0 group-hover:opacity-100">
                             <i class="fa-solid fa-trash"></i>
                         </button>
@@ -2242,7 +2151,7 @@
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const day = String(date.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
+                return `${ year } -${ month } -${ day } `;
             };
 
             // Init Map with all dates in range
@@ -2343,7 +2252,7 @@
             const drawChart = (type, canvasId, legendId, instanceVar, colorPalette) => {
                 const dataMap = {};
                 monthData.filter(e => e.type === type).forEach(e => {
-                    const key = e.subCategory ? `${e.category}: ${e.subCategory}` : e.category;
+                    const key = e.subCategory ? `${ e.category }: ${ e.subCategory } ` : e.category;
                     dataMap[key] = (dataMap[key] || 0) + e.amount;
                 });
 
@@ -2375,7 +2284,7 @@
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    label: (ctx) => ` ${ctx.label}: ${formatCurrency(ctx.raw)}`
+                                    label: (ctx) => ` ${ ctx.label }: ${ formatCurrency(ctx.raw) } `
                                 }
                             }
                         },
@@ -2395,17 +2304,17 @@
                     labels.forEach((label, i) => {
                         const percent = ((data[i] / total) * 100).toFixed(1);
                         legendDiv.innerHTML += `
-                                <div class="flex items-center justify-between text-xs p-1 rounded">
+                    < div class="flex items-center justify-between text-xs p-1 rounded" >
                                     <div class="flex items-center gap-2 overflow-hidden">
                                         <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${colorPalette[i % colorPalette.length]}"></span>
                                         <span class="text-slate-300 truncate" title="${label}">${label}</span>
                                     </div>
                                     <span class="text-slate-500 font-mono flex-shrink-0 ml-2">${percent}%</span>
-                                </div>
-                            `;
+                                </div >
+                    `;
                     });
                 } else {
-                    legendDiv.innerHTML = `<p class="text-slate-500 text-[10px] text-center py-2">No ${type} data for this month</p>`;
+                    legendDiv.innerHTML = `< p class="text-slate-500 text-[10px] text-center py-2" > No ${ type } data for this month</p > `;
                 }
             };
 
@@ -2569,7 +2478,7 @@
                     // Color based on displacement (subtle teal)
                     const displacement = Math.sqrt((p.x - p.ox) ** 2 + (p.y - p.oy) ** 2);
                     const alpha = 0.1 + Math.min(displacement / 20, 0.4);
-                    ctx.fillStyle = `rgba(20, 184, 166, ${alpha})`;
+                    ctx.fillStyle = `rgba(20, 184, 166, ${ alpha })`;
                     ctx.fill();
                 });
 
@@ -2713,7 +2622,7 @@
                 await addDoc(collection(db, "users", uid, "expenses"), item);
                 count++;
             }
-            alert(`Synced ${count} items to cloud!`);
+            alert(`Synced ${ count } items to cloud!`);
             loadCloudData(uid); // Reload to get firestoreIds
         }
 
@@ -2887,14 +2796,14 @@
             saveExpenses();
             renderAll(); // Immediate Local Update
 
-            let msg = `Imported ${addedCount} transactions successfully.`;
-            if (skippedCount > 0) msg += `\nSkipped ${skippedCount} duplicates.`;
-            if (errorCount > 0) msg += `\nFailed to parse ${errorCount} lines.`;
+            let msg = `Imported ${ addedCount } transactions successfully.`;
+            if (skippedCount > 0) msg += `\nSkipped ${ skippedCount } duplicates.`;
+            if (errorCount > 0) msg += `\nFailed to parse ${ errorCount } lines.`;
 
             // Cloud Sync (Blocking)
             if (currentUser && newItems.length > 0) {
                 // Show Blocking Toast that doesn't disappear
-                const toastId = showToast(`Syncing ${newItems.length} items to cloud... Please wait.`, 'sync');
+                const toastId = showToast(`Syncing ${ newItems.length } items to cloud...Please wait.`, 'sync');
 
                 try {
                     let syncCount = 0;
@@ -2914,7 +2823,7 @@
                     const toastEl = document.getElementById(toastId);
                     if (toastEl) toastEl.remove();
 
-                    showToast(`Cloud Sync Complete! (${syncCount}/${newItems.length})`, 'success');
+                    showToast(`Cloud Sync Complete!(${ syncCount } / ${ newItems.length })`, 'success');
                     saveExpenses(); // Save again to store new firestoreIds
 
                 } catch (e) {
@@ -2931,7 +2840,7 @@
                 }
             } else {
                 if (skippedCount > 0) {
-                    showToast(`Import Complete. Skipped ${skippedCount} duplicates.`, 'info');
+                    showToast(`Import Complete.Skipped ${ skippedCount } duplicates.`, 'info');
                 } else {
                     showToast(msg, 'success');
                 }
@@ -2959,7 +2868,7 @@
             // Sync toast pulse
             const anim = type === 'sync' ? 'animate-pulse' : 'animate-slide-up';
 
-            toast.className = `${bgClass} backdrop-blur-md text-white px-6 py-3 rounded-xl shadow-2xl border border-white/10 flex items-center gap-3 ${anim} pointer-events-auto min-w-[300px] justify-center`;
+            toast.className = `${ bgClass } backdrop - blur - md text - white px - 6 py - 3 rounded - xl shadow - 2xl border border - white / 10 flex items - center gap - 3 ${ anim } pointer - events - auto min - w - [300px] justify - center`;
 
             let icon = 'fa-info-circle';
             if (type === 'success') icon = 'fa-check-circle';
@@ -2967,8 +2876,8 @@
             if (type === 'sync') icon = 'fa-rotate';
 
             toast.innerHTML = `
-                <i class="fa-solid ${icon} ${type === 'sync' ? 'fa-spin' : ''}"></i>
-                <span class="font-medium text-sm">${message}</span>
+            < i class= "fa-solid ${icon} ${type === 'sync' ? 'fa-spin' : ''}" ></i >
+            <span class="font-medium text-sm">${message}</span>
             `;
 
             container.appendChild(toast);
