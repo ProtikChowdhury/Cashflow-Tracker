@@ -2949,9 +2949,7 @@
             closeActionModal();
         }
     </script>
-</body>
-
-<script>
+    <script>
         // --- Pinch to Zoom for Table Logic ---
         (function initPinchZoom() {
             const container = document.querySelector('.overflow-x-auto.overflow-y-auto'); 
@@ -2968,7 +2966,7 @@
                 if (e.touches.length === 2) {
                     isPinching = true;
                     initialDistance = getDistance(e.touches);
-                    startScale = currentScale; // Capture starting scale
+                    startScale = currentScale; 
                 }
             }, { passive: true });
 
@@ -2976,19 +2974,16 @@
                 if (!isPinching || e.touches.length !== 2) return;
 
                 const newDistance = getDistance(e.touches);
-                if (initialDistance === 0) return; // Prevent division by zero
+                if (initialDistance === 0) return; 
 
                 const delta = newDistance / initialDistance;
-                
-                // Calculate new scale based on startScale * delta
-                // delta > 1 means pinch out (zoom in), delta < 1 means pinch in (zoom out)
                 let nextScale = startScale * delta;
 
                 // Clamp Scale (0.7x to 1.3x)
                 if (nextScale < 0.7) nextScale = 0.7;
                 if (nextScale > 1.3) nextScale = 1.3;
 
-                // Apply Scale
+                // Apply Scale (No spaces in %)
                 tableBody.style.fontSize = `${ nextScale * 100} %`;
                 
                 currentScale = nextScale;
@@ -3006,7 +3001,7 @@
                 return Math.sqrt(dx * dx + dy * dy);
             }
         })();
-</script>
+    </script>
 </body>
 
 </html>
