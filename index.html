@@ -386,6 +386,197 @@
         .motion-toggle-btn.off {
             color: #ef4444;
         }
+
+        /* --- Mobile Responsiveness --- */
+
+        /* 1. Floating Action Button (FAB) */
+        .fab-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 90;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: end;
+            gap: 12px;
+        }
+
+        .fab-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #14b8a6, #2563eb);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .fab-btn:active {
+            transform: scale(0.9);
+        }
+
+        .fab-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            opacity: 0;
+            transform: translateY(20px) scale(0.9);
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            align-items: flex-end;
+        }
+
+        .fab-container.active .fab-menu {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: all;
+        }
+
+        .fab-container.active .fab-main {
+            transform: rotate(45deg);
+            background: #ef4444;
+            /* Turn red for close */
+            box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.4);
+        }
+
+        .fab-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .fab-label {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(8px);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .fab-action {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .fab-action:active {
+            transform: scale(0.95);
+        }
+
+        /* 2. Mobile Card View for Table */
+        @media (max-width: 768px) {
+
+            /* Hide Thead */
+            thead {
+                display: none;
+            }
+
+            /* Make rows display as cards */
+            tbody tr {
+                display: grid;
+                grid-template-areas:
+                    "date amount"
+                    "desc desc"
+                    "cat action";
+                grid-template-columns: 1fr auto;
+                gap: 8px;
+                background: rgba(30, 41, 59, 0.4);
+                margin-bottom: 12px;
+                padding: 16px;
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 16px;
+                position: relative;
+            }
+
+            /* Cells */
+            td {
+                padding: 0 !important;
+                border: none !important;
+                display: block;
+            }
+
+            /* Assign cells to grid areas */
+            td:nth-child(1) {
+                grid-area: date;
+                font-size: 0.75rem;
+                color: #94a3b8;
+            }
+
+            /* Date */
+            td:nth-child(2) {
+                grid-area: desc;
+                font-size: 1rem;
+                color: #f8fafc;
+                font-weight: 500;
+                margin-top: 4px;
+            }
+
+            /* Desc */
+            td:nth-child(3) {
+                grid-area: cat;
+                margin-top: 8px;
+            }
+
+            /* Category */
+            td:nth-child(4) {
+                grid-area: amount;
+                font-size: 1.1rem;
+                text-align: right;
+            }
+
+            /* Amount */
+            td:nth-child(5) {
+                grid-area: action;
+                text-align: right;
+                margin-top: 8px;
+            }
+
+            /* Action */
+
+            /* Adjust styling for card look */
+            td:nth-child(3) span {
+                /* Category Badge */
+                font-size: 0.7rem;
+                padding: 4px 8px;
+            }
+
+            /* Delete Button visibility on mobile */
+            td:nth-child(5) button {
+                opacity: 0.5 !important;
+            }
+
+            td:nth-child(5) button:hover {
+                opacity: 1 !important;
+            }
+
+            /* Chart Mobile Height Fix */
+            .relative.h-64.w-full {
+                height: 250px;
+            }
+
+            /* Trend Chart */
+            .relative.h-48.w-full {
+                height: 200px;
+            }
+
+            /* Donut Charts */
+        }
     </style>
 </head>
 
@@ -423,13 +614,13 @@
             </button>
 
             <button onclick="toggleAddModal('earning')"
-                class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-emerald-900/50 flex items-center gap-2">
-                <i class="fa-solid fa-plus"></i> <span class="hidden md:inline">Add Earning</span>
+                class="hidden md:flex bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-emerald-900/50 items-center gap-2">
+                <i class="fa-solid fa-plus"></i> <span class="hidden lg:inline">Add Earning</span>
             </button>
 
             <button onclick="toggleAddModal('expense')"
-                class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-brand-900/50 flex items-center gap-2">
-                <i class="fa-solid fa-minus"></i> <span class="hidden md:inline">Add Expense</span>
+                class="hidden md:flex bg-brand-600 hover:bg-brand-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-brand-900/50 items-center gap-2">
+                <i class="fa-solid fa-minus"></i> <span class="hidden lg:inline">Add Expense</span>
             </button>
         </div>
     </nav>
@@ -954,6 +1145,33 @@
             </div>
         </div>
     </div>
+
+    <!-- Mobile Floating Action Button (FAB) -->
+    <div id="mobileFab" class="fab-container md:hidden">
+        <div class="fab-menu">
+            <div class="fab-item" onclick="toggleAddModal('earning'); toggleFab()">
+                <div class="fab-label">Add Income</div>
+                <div class="fab-action bg-emerald-500">
+                    <i class="fa-solid fa-plus text-xl"></i>
+                </div>
+            </div>
+            <div class="fab-item" onclick="toggleAddModal('expense'); toggleFab()">
+                <div class="fab-label">Add Expense</div>
+                <div class="fab-action bg-brand-500">
+                    <i class="fa-solid fa-minus text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <button class="fab-btn fab-main" onclick="toggleFab()">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+    </div>
+
+    <script>
+        function toggleFab() {
+            document.getElementById('mobileFab').classList.toggle('active');
+        }
+    </script>
 
     <script>
         // --- State Management ---
