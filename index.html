@@ -2521,41 +2521,60 @@
                 }
                 ctx.clearRect(0, 0, width, height);
 
+                const isMobile = window.innerWidth < 768; // Mobile Check
+                const time = Date.now() * 0.001; // Time for sine wave
+
                 particles.forEach(p => {
-                    // Distance to mouse
-                    const dx = mouse.x - p.x;
-                    const dy = mouse.y - p.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (isMobile) {
+                        // --- Mobile: Gentle Drift ---
+                        // Move in a slow smooth wave based on original position
+                        const driftX = Math.sin(time + p.oy * 0.005) * 5;
+                        const driftY = Math.cos(time + p.ox * 0.005) * 5;
 
-                    // Interaction radius
-                    const radius = 150;
+                        p.x = p.ox + driftX;
+                        p.y = p.oy + driftY;
 
-                    if (dist < radius) {
-                        const angle = Math.atan2(dy, dx);
-                        const force = (radius - dist) / radius;
-                        const push = force * 6; // Push strength
+                        // Reset velocity so it doesn't explode if switching back to desktop
+                        p.vx = 0;
+                        p.vy = 0;
 
-                        p.vx -= Math.cos(angle) * push;
-                        p.vy -= Math.sin(angle) * push;
+                    } else {
+                        // --- Desktop: Mouse Interaction (Existing) ---
+                        // Distance to mouse
+                        const dx = mouse.x - p.x;
+                        const dy = mouse.y - p.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        // Interaction radius
+                        const radius = 150;
+
+                        if (dist < radius) {
+                            const angle = Math.atan2(dy, dx);
+                            const force = (radius - dist) / radius;
+                            const push = force * 6; // Push strength
+
+                            p.vx -= Math.cos(angle) * push;
+                            p.vy -= Math.sin(angle) * push;
+                        }
+
+                        // Spring back to original pos
+                        const k = 0.05; // Spring constant
+                        const ax = (p.ox - p.x) * k;
+                        const ay = (p.oy - p.y) * k;
+
+                        p.vx += ax;
+                        p.vy += ay;
+
+                        // Friction
+                        p.vx *= 0.85;
+                        p.vy *= 0.85;
+
+                        // Apply velocity
+                        p.x += p.vx;
+                        p.y += p.vy;
                     }
 
-                    // Spring back to original pos
-                    const k = 0.05; // Spring constant
-                    const ax = (p.ox - p.x) * k;
-                    const ay = (p.oy - p.y) * k;
-
-                    p.vx += ax;
-                    p.vy += ay;
-
-                    // Friction
-                    p.vx *= 0.85;
-                    p.vy *= 0.85;
-
-                    // Apply velocity
-                    p.x += p.vx;
-                    p.y += p.vy;
-
-                    // Draw
+                    // Draw (Shared)
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
                     // Color based on displacement (subtle teal)
