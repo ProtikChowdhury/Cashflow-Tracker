@@ -1661,6 +1661,7 @@
             }
 
             toggleAddModal();
+            clearFilters(); // Ensure new transaction is visible
             renderAll();
 
             // Reset Date to current
@@ -2704,6 +2705,7 @@
                     window.expenses = cloudExpenses;
                     // Sort by Date Descending
                     window.expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    window.saveExpenses(); // Save to local storage!
                     window.renderAll();
                 } else {
                     console.log("No cloud data found. Asking to sync local?");
@@ -2760,7 +2762,10 @@
                 console.log("Cloud Add ID: ", docRef.id);
                 // Update local model with firestoreId
                 const idx = window.expenses.findIndex(e => e.id === expense.id);
-                if (idx !== -1) window.expenses[idx].firestoreId = docRef.id;
+                if (idx !== -1) {
+                    window.expenses[idx].firestoreId = docRef.id;
+                    window.saveExpenses(); // Save the new firestoreId to local storage!
+                }
             } catch (e) { console.error("Cloud Add Error", e); }
         };
 
@@ -2970,7 +2975,7 @@
             // Sync toast pulse
             const anim = type === 'sync' ? 'animate-pulse' : 'animate-slide-up';
 
-            toast.className = `${bgClass} backdrop - blur - md text - white px - 6 py - 3 rounded - xl shadow - 2xl border border - white / 10 flex items - center gap - 3 ${anim} pointer - events - auto min - w - [300px] justify - center`;
+            toast.className = `${bgClass} backdrop-blur-md text-white px-6 py-3 rounded-xl shadow-2xl border border-white/10 flex items-center gap-3 ${anim} pointer-events-auto min-w-[300px] justify-center`;
 
             let icon = 'fa-info-circle';
             if (type === 'success') icon = 'fa-check-circle';
@@ -2978,7 +2983,7 @@
             if (type === 'sync') icon = 'fa-rotate';
 
             toast.innerHTML = `
-            < i class= "fa-solid ${icon} ${type === 'sync' ? 'fa-spin' : ''}" ></i >
+            <i class="fa-solid ${icon} ${type === 'sync' ? 'fa-spin' : ''}"></i>
             <span class="font-medium text-sm">${message}</span>
             `;
 
