@@ -2785,9 +2785,9 @@
                 const docRef = await addDoc(collection(db, "users", currentUser.uid, "expenses"), expense);
                 console.log("Cloud Add ID: ", docRef.id);
                 // Update local model with firestoreId
-                const idx = window.expenses.findIndex(e => e.id === expense.id);
+                const idx = expenses.findIndex(e => e.id === expense.id);
                 if (idx !== -1) {
-                    window.expenses[idx].firestoreId = docRef.id;
+                    expenses[idx].firestoreId = docRef.id;
                     window.saveExpenses(); // Save the new firestoreId to local storage!
                 }
             } catch (e) { console.error("Cloud Add Error", e); }
