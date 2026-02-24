@@ -1609,23 +1609,28 @@
             const editingId = document.getElementById('editingId').value;
 
             if (editingId) {
-                const index = expenses.findIndex(e => e.id == editingId);
-                if (index !== -1) {
-                    expenses[index] = {
-                        ...expenses[index],
-                        type,
-                        amount,
-                        description,
-                        category,
-                        subCategory,
-                        date: dateTimeString
-                    };
+                const expenseToUpdate = {
+                    ...expenses.find(e => e.id == editingId),
+                    type,
+                    amount,
+                    description,
+                    category,
+                    subCategory,
+                    date: dateTimeString
+                };
 
-                    // Cloud Sync Update
-                    if (typeof window.cloudUpdate === 'function') {
-                        window.cloudUpdate(expenses[index])
-                            .then(() => showToast('Transaction updated successfully', 'success'))
-                            .catch(() => showToast('Saved locally, but cloud sync failed', 'error'));
+                // Cloud Sync Update (Relies on onSnapshot to update UI)
+                if (typeof window.cloudUpdate === 'function' && currentUser) {
+                    window.cloudUpdate(expenseToUpdate)
+                        .then(() => showToast('Transaction updated successfully', 'success'))
+                        .catch(() => showToast('Saved locally, but cloud sync failed', 'error'));
+                } else {
+                    // Fallback to local update if not logged in
+                    const index = expenses.findIndex(e => e.id == editingId);
+                    if (index !== -1) {
+                        expenses[index] = expenseToUpdate;
+                        saveExpenses();
+                        renderAll();
                     }
                 }
             } else {
@@ -1638,18 +1643,21 @@
                     subCategory,
                     date: dateTimeString
                 };
-                expenses.unshift(newExpense);
 
-                // Cloud Sync Add
-                if (typeof window.cloudAdd === 'function') {
+                // Cloud Sync Add (Relies on onSnapshot to update UI)
+                if (typeof window.cloudAdd === 'function' && currentUser) {
                     window.cloudAdd(newExpense)
                         .then(() => showToast('Transaction saved successfully', 'success'))
                         .catch(() => showToast('Saved locally, but cloud sync failed', 'error'));
+                } else {
+                    // Fallback to local add if not logged in
+                    expenses.unshift(newExpense);
+                    saveExpenses();
+                    renderAll();
                 }
             }
 
-            saveExpenses();
-
+            // Recurring Logic (Local)
             if (!editingId && isRecurring && type === 'expense') {
                 const recurrenceId = Date.now() + Math.random();
                 recurringExpenses.push({
@@ -1662,7 +1670,6 @@
 
             toggleAddModal();
             clearFilters(); // Ensure new transaction is visible
-            renderAll();
 
             // Reset Date to current
             const nowReset = new Date();
@@ -2709,21 +2716,23 @@
                         cloudExpenses.push({ ...doc.data(), firestoreId: doc.id });
                     });
 
-                    if (cloudExpenses.length > 0) {
-                        console.log("Loaded " + cloudExpenses.length + " expenses from cloud (Real-time update)");
-                        // Fix Reference Bug: Assign to global variable 'expenses', not window object
-                        expenses = cloudExpenses;
-                        // Sort by Date Descending
-                        expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
-                        window.saveExpenses(); // Save to local storage!
-                        window.renderAll();
-                    } else {
-                        console.log("No cloud data found. Asking to sync local?");
-                        // Optional: Auto-upload local data if cloud is empty
-                        if (window.expenses.length > 0 && confirm("Cloud is empty. Upload your local data?")) {
+                    if (cloudExpenses.length === 0) {
+                        console.log("Cloud data is empty or cleared.");
+                        // Optional: If you want to prompt to upload local data only ONCE on fresh login
+                        /* 
+                        if (expenses.length > 0 && confirm("Cloud is empty. Upload your local data?")) {
                             syncLocalToCloud(uid);
                         }
+                        */
+                    } else {
+                        console.log("Loaded " + cloudExpenses.length + " expenses from cloud (Real-time update)");
                     }
+
+                    // ALWAYS update the UI to perfectly mirror the cloud state, even if empty (0 items)
+                    expenses = cloudExpenses;
+                    expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    window.saveExpenses(); // Save to local storage for offline use
+                    window.renderAll();
                 }, (error) => {
                     console.error("Error with real-time sync:", error);
                 });
