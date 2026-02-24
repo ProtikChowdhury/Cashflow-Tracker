@@ -1620,7 +1620,7 @@
                 };
 
                 // Cloud Sync Update (Relies on onSnapshot to update UI)
-                if (typeof window.cloudUpdate === 'function' && currentUser) {
+                if (typeof window.cloudUpdate === 'function' && window.currentUser) {
                     window.cloudUpdate(expenseToUpdate)
                         .then(() => showToast('Transaction updated successfully', 'success'))
                         .catch(() => showToast('Saved locally, but cloud sync failed', 'error'));
@@ -1645,7 +1645,7 @@
                 };
 
                 // Cloud Sync Add (Relies on onSnapshot to update UI)
-                if (typeof window.cloudAdd === 'function' && currentUser) {
+                if (typeof window.cloudAdd === 'function' && window.currentUser) {
                     window.cloudAdd(newExpense)
                         .then(() => showToast('Transaction saved successfully', 'success'))
                         .catch(() => showToast('Saved locally, but cloud sync failed', 'error'));
@@ -2667,6 +2667,7 @@
         // STATE LISTENER
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
+            window.currentUser = user; // Expose globally for form submission checks
             updateAuthUI(user);
 
             if (user) {
