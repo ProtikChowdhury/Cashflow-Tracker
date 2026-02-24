@@ -2610,7 +2610,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, where, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAHbCsmn70gsJvqrCGMD-5lx8SCNYCFJC8",
@@ -2628,6 +2628,7 @@
         const provider = new GoogleAuthProvider();
 
         let currentUser = null;
+        let unsubscribeSnapshot = null;
 
         // AUTH FUNCTIONS
         window.handleAuth = async () => {
@@ -2635,6 +2636,10 @@
                 // Logout
                 try {
                     await signOut(auth);
+                    if (unsubscribeSnapshot) {
+                        unsubscribeSnapshot();
+                        unsubscribeSnapshot = null;
+                    }
                     // UI handled by onAuthStateChanged
                 } catch (error) {
                     console.error("Logout Error:", error);
@@ -2688,34 +2693,43 @@
         }
 
         // DATABASE FUNCTIONS
-        async function loadCloudData(uid) {
+        function loadCloudData(uid) {
             try {
                 // Show loading state if desired
                 const q = query(collection(db, "users", uid, "expenses"));
-                const querySnapshot = await getDocs(q);
 
-                const cloudExpenses = [];
-                querySnapshot.forEach((doc) => {
-                    cloudExpenses.push({ ...doc.data(), firestoreId: doc.id });
+                // Unsubscribe from previous listener if it exists
+                if (unsubscribeSnapshot) {
+                    unsubscribeSnapshot();
+                }
+
+                unsubscribeSnapshot = onSnapshot(q, (querySnapshot) => {
+                    const cloudExpenses = [];
+                    querySnapshot.forEach((doc) => {
+                        cloudExpenses.push({ ...doc.data(), firestoreId: doc.id });
+                    });
+
+                    if (cloudExpenses.length > 0) {
+                        console.log("Loaded " + cloudExpenses.length + " expenses from cloud (Real-time update)");
+                        // Merge or Replace? For now, replace local with cloud
+                        window.expenses = cloudExpenses;
+                        // Sort by Date Descending
+                        window.expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        window.saveExpenses(); // Save to local storage!
+                        window.renderAll();
+                    } else {
+                        console.log("No cloud data found. Asking to sync local?");
+                        // Optional: Auto-upload local data if cloud is empty
+                        if (window.expenses.length > 0 && confirm("Cloud is empty. Upload your local data?")) {
+                            syncLocalToCloud(uid);
+                        }
+                    }
+                }, (error) => {
+                    console.error("Error with real-time sync:", error);
                 });
 
-                if (cloudExpenses.length > 0) {
-                    console.log("Loaded " + cloudExpenses.length + " expenses from cloud");
-                    // Merge or Replace? For now, replace local with cloud
-                    window.expenses = cloudExpenses;
-                    // Sort by Date Descending
-                    window.expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
-                    window.saveExpenses(); // Save to local storage!
-                    window.renderAll();
-                } else {
-                    console.log("No cloud data found. Asking to sync local?");
-                    // Optional: Auto-upload local data if cloud is empty
-                    if (window.expenses.length > 0 && confirm("Cloud is empty. Upload your local data?")) {
-                        syncLocalToCloud(uid);
-                    }
-                }
             } catch (error) {
-                console.error("Error loading cloud data:", error);
+                console.error("Error setting up cloud data listener:", error);
             }
         }
 
@@ -2727,7 +2741,7 @@
                 count++;
             }
             alert(`Synced ${count} items to cloud!`);
-            loadCloudData(uid); // Reload to get firestoreIds
+            // loadCloudData(uid); -- Removed because onSnapshot handles updates automatically
         }
 
         // EXPOSE SAVE FUNCTION TO WINDOW
