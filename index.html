@@ -2711,10 +2711,10 @@
 
                     if (cloudExpenses.length > 0) {
                         console.log("Loaded " + cloudExpenses.length + " expenses from cloud (Real-time update)");
-                        // Merge or Replace? For now, replace local with cloud
-                        window.expenses = cloudExpenses;
+                        // Fix Reference Bug: Assign to global variable 'expenses', not window object
+                        expenses = cloudExpenses;
                         // Sort by Date Descending
-                        window.expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
                         window.saveExpenses(); // Save to local storage!
                         window.renderAll();
                     } else {
