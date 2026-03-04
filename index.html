@@ -2797,7 +2797,10 @@
                     expenses[idx].firestoreId = docRef.id;
                     window.saveExpenses(); // Save the new firestoreId to local storage!
                 }
-            } catch (e) { console.error("Cloud Add Error", e); }
+            } catch (e) {
+                console.error("Cloud Add Error", e);
+                throw e;
+            }
         };
 
         window.cloudDelete = async (firestoreId) => {
@@ -2805,7 +2808,10 @@
             try {
                 await deleteDoc(doc(db, "users", currentUser.uid, "expenses", firestoreId));
                 console.log("Cloud Delete Success");
-            } catch (e) { console.error("Cloud Delete Error", e); }
+            } catch (e) {
+                console.error("Cloud Delete Error", e);
+                throw e;
+            }
         };
 
         window.cloudUpdate = async (expense) => {
@@ -2815,7 +2821,10 @@
                 const { firestoreId, ...data } = expense;
                 await setDoc(doc(db, "users", currentUser.uid, "expenses", firestoreId), data);
                 console.log("Cloud Update Success");
-            } catch (e) { console.error("Cloud Update Error", e); }
+            } catch (e) {
+                console.error("Cloud Update Error", e);
+                throw e;
+            }
         }
 
 
