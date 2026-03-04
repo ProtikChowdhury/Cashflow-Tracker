@@ -1619,19 +1619,21 @@
                     date: dateTimeString
                 };
 
-                // Cloud Sync Update (Relies on onSnapshot to update UI)
+                // Optimistic UI: Update locally first
+                const index = expenses.findIndex(e => e.id == editingId);
+                if (index !== -1) {
+                    expenses[index] = expenseToUpdate;
+                    saveExpenses();
+                    renderAll();
+                }
+
+                // Cloud Sync Update (Background)
                 if (typeof window.cloudUpdate === 'function' && window.currentUser) {
                     window.cloudUpdate(expenseToUpdate)
                         .then(() => showToast('Transaction updated successfully', 'success'))
                         .catch(() => showToast('Saved locally, but cloud sync failed', 'error'));
                 } else {
-                    // Fallback to local update if not logged in
-                    const index = expenses.findIndex(e => e.id == editingId);
-                    if (index !== -1) {
-                        expenses[index] = expenseToUpdate;
-                        saveExpenses();
-                        renderAll();
-                    }
+                    showToast('Transaction updated successfully', 'success')
                 }
             } else {
                 const newExpense = {
@@ -1644,16 +1646,18 @@
                     date: dateTimeString
                 };
 
-                // Cloud Sync Add (Relies on onSnapshot to update UI)
+                // Optimistic UI: Add locally first
+                expenses.unshift(newExpense);
+                saveExpenses();
+                renderAll();
+
+                // Cloud Sync Add (Background)
                 if (typeof window.cloudAdd === 'function' && window.currentUser) {
                     window.cloudAdd(newExpense)
                         .then(() => showToast('Transaction saved successfully', 'success'))
                         .catch(() => showToast('Saved locally, but cloud sync failed', 'error'));
                 } else {
-                    // Fallback to local add if not logged in
-                    expenses.unshift(newExpense);
-                    saveExpenses();
-                    renderAll();
+                    showToast('Transaction saved successfully', 'success')
                 }
             }
 
