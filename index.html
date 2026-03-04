@@ -2752,6 +2752,10 @@
                     window.renderAll();
                 }, (error) => {
                     console.error("Error with real-time sync:", error);
+                    const debugInfo = document.getElementById('debugInfo');
+                    if (debugInfo && currentUser) {
+                        debugInfo.innerText = `UID:${currentUser.uid.substring(0, 5)} | ERR: ${error.code || 'Sync Failed'}`;
+                    }
                 });
 
             } catch (error) {
