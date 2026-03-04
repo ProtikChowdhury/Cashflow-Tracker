@@ -531,8 +531,6 @@
 
             <div id="clock" class="hidden md:block text-slate-400 font-mono text-sm mr-2"></div>
 
-            <span id="debugInfo" class="text-[10px] md:text-sm text-red-400 font-mono hidden px-1 md:px-2"></span>
-
             <button onclick="toggleSettings()" class="text-slate-400 hover:text-white transition-colors p-2">
                 <i class="fa-solid fa-gear text-lg animate-spin-slow"></i>
             </button>
@@ -2692,7 +2690,6 @@
             const btnText = document.getElementById('authText');
             const avatar = document.getElementById('userAvatar');
             const btn = document.getElementById('authBtn');
-            const debugInfo = document.getElementById('debugInfo');
 
             // Ensure button is visible
             if (btn) btn.classList.remove('hidden');
@@ -2702,15 +2699,9 @@
                 avatar.classList.remove('hidden');
                 avatar.style.backgroundImage = `url('${user.photoURL}')`;
                 avatar.style.backgroundSize = 'cover';
-
-                if (debugInfo) {
-                    debugInfo.classList.remove('hidden');
-                    debugInfo.innerText = `UID:${user.uid.substring(0, 5)} | Docs:?`;
-                }
             } else {
                 btnText.innerText = "Sign In";
                 avatar.classList.add('hidden');
-                if (debugInfo) debugInfo.classList.add('hidden');
             }
         }
 
@@ -2737,11 +2728,6 @@
                         console.log("Loaded " + cloudExpenses.length + " expenses from cloud (Real-time update)");
                     }
 
-                    const debugInfo = document.getElementById('debugInfo');
-                    if (debugInfo && currentUser) {
-                        debugInfo.innerText = `UID:${currentUser.uid.substring(0, 5)} | Docs:${cloudExpenses.length}`;
-                    }
-
                     // Update global expenses to mirror cloud state exactly 
                     // (we overwrite because cloud is truth here for synced devices)
                     window.expenses = cloudExpenses;
@@ -2752,10 +2738,6 @@
                     window.renderAll();
                 }, (error) => {
                     console.error("Error with real-time sync:", error);
-                    const debugInfo = document.getElementById('debugInfo');
-                    if (debugInfo && currentUser) {
-                        debugInfo.innerText = `UID:${currentUser.uid.substring(0, 5)} | ERR: ${error.code || 'Sync Failed'}`;
-                    }
                 });
 
             } catch (error) {
