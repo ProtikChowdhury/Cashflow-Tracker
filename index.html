@@ -2733,9 +2733,12 @@
                         console.log("Loaded " + cloudExpenses.length + " expenses from cloud (Real-time update)");
                     }
 
-                    // ALWAYS update the UI to perfectly mirror the cloud state, even if empty (0 items)
-                    expenses = cloudExpenses;
-                    expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    // Update global expenses to mirror cloud state exactly 
+                    // (we overwrite because cloud is truth here for synced devices)
+                    window.expenses = cloudExpenses;
+                    expenses = cloudExpenses; // Also update the local file-scoped variable
+
+                    window.expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
                     window.saveExpenses(); // Save to local storage for offline use
                     window.renderAll();
                 }, (error) => {
